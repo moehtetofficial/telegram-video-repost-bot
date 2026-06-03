@@ -493,6 +493,30 @@
     .arch { flex-direction: column; align-items: center; }
     .arch-arrow { transform: rotate(90deg); }
   }
+
+  /* ── Screenshots ── */
+  .screenshot {
+    margin: 14px 0 4px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .screenshot img {
+    width: 100%;
+    display: block;
+    opacity: 0.92;
+    transition: opacity 0.2s;
+  }
+  .screenshot img:hover { opacity: 1; }
+  .screenshot-cap {
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    padding: 6px 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
 </style>
 </head>
 <body>
@@ -599,6 +623,11 @@
         <div class="substep-dot">3</div>
         <div class="substep-content">
           <div class="substep-label">Token မှတ်ထားပါ</div>
+
+          <div class="screenshot">
+            <img src="https://raw.githubusercontent.com/moehtetofficial/telegram-video-repost-bot/main/img/botfather.png" alt="BotFather screenshot" loading="lazy">
+            <div class="screenshot-cap">@BotFather — /newbot flow</div>
+          </div>
           <div class="substep-desc">BotFather ပေးသော token (ဥပမာ: <code style="color:var(--gold2); font-family:var(--mono)">1234567890:AAFMe...</code>) ကို မှတ်ထားပါ</div>
         </div>
       </div>
@@ -739,6 +768,11 @@ Password: </pre>
         <div class="substep-dot">3</div>
         <div class="substep-content">
           <div class="substep-label">SDK: Docker ရွေးပါ</div>
+
+          <div class="screenshot">
+            <img src="https://raw.githubusercontent.com/moehtetofficial/telegram-video-repost-bot/main/img/hf-space.png" alt="HuggingFace new space" loading="lazy">
+            <div class="screenshot-cap">HuggingFace — New Space page (SDK: Docker ရွေး)</div>
+          </div>
           <div class="substep-desc">SDK selector မှာ <strong style="color:#fff">Docker</strong> ကို ရွေးပါ (Gradio/Streamlit မဟုတ်ပါ)</div>
         </div>
       </div>
