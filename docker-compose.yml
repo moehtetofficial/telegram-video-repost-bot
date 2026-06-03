@@ -1,0 +1,71 @@
+services:
+  # ── Stage 1: Video repost bot (lightweight) ──────────────────────
+  repost-bot:
+    build: .
+    container_name: telegram-repost-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "7860:7860"
+    volumes:
+      - bot-data:/tmp/bot
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Stage 2: Movie recap pipeline (heavy — ML models) ───────────
+  recap-pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile.recap
+    container_name: telegram-recap-pipeline
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "7861:7861"
+    volumes:
+      # Scratch space for video processing (large files)
+      - recap-data:/tmp/recap
+    # The recap service is memory-hungry when models are loaded.
+    # Set limits based on your VPS plan:
+    #   4 GB VPS → mem_limit: 3g
+    #   8 GB VPS → mem_limit: 6g
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Dashboard (lightweight web UI) ─────────────────────────────
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    container_name: telegram-dashboard
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    volumes:
+      # Docker socket gives the dashboard access to container status/logs
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Mount .env so the config editor can read/write it
+      - ./.env:/config/.env
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+volumes:
+  bot-data:
+  recap-data:
