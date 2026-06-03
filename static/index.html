@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telegram Bot Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body { background: #0f172a; color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; }
+    .log-box { background: #0d1117; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px;
+               line-height: 1.5; white-space: pre-wrap; word-break: break-all; overflow-y: auto;
+               max-height: 400px; border-radius: 8px; }
+    .pulse-green { animation: pulse-g 2s infinite; }
+    .pulse-red { animation: pulse-r 2s infinite; }
+    @keyframes pulse-g { 0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,.4); } 50% { box-shadow: 0 0 0 8px rgba(34,197,94,0); } }
+    @keyframes pulse-r { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,.4); } 50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); } }
+    .tab-active { border-bottom: 2px solid #3b82f6; color: #3b82f6; }
+    .tab-inactive { border-bottom: 2px solid transparent; color: #94a3b8; }
+    .tab-inactive:hover { color: #cbd5e1; }
+    .btn { padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all .15s; }
+    .btn-blue { background: #3b82f6; color: #fff; } .btn-blue:hover { background: #2563eb; }
+    .btn-red { background: #ef4444; color: #fff; } .btn-red:hover { background: #dc2626; }
+    .btn-green { background: #22c55e; color: #fff; } .btn-green:hover { background: #16a34a; }
+    .btn-gray { background: #334155; color: #cbd5e1; } .btn-gray:hover { background: #475569; }
+    input, textarea { background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0;
+                      padding: 8px 12px; width: 100%; }
+    input:focus, textarea:focus { outline: none; border-color: #3b82f6; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .badge-green { background: #166534; color: #4ade80; }
+    .badge-red { background: #7f1d1d; color: #fca5a5; }
+    .badge-yellow { background: #713f12; color: #fde047; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="border-b border-gray-700 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="text-2xl">📺</div>
+      <div>
+        <h1 class="text-xl font-bold text-white">Telegram Bot Dashboard</h1>
+        <p class="text-sm text-gray-400">Repost + Recap Automation</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <span id="clock" class="text-sm text-gray-400"></span>
+      <button onclick="refreshAll()" class="btn btn-gray text-sm">Refresh</button>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-6 space-y-6">
+
+    <!-- Status Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Repost Bot -->
+      <div class="card p-5" id="card-repost">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div id="dot-repost" class="w-3 h-3 rounded-full bg-gray-500"></div>
+            <h2 class="text-lg font-semibold text-white">Repost Bot</h2>
+          </div>
+          <span id="badge-repost" class="badge badge-yellow">checking…</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <div><span class="text-gray-400">Status:</span> <span id="status-repost" class="text-gray-300">—</span></div>
+          <div><span class="text-gray-400">Health:</span> <span id="health-repost" class="text-gray-300">—</span></div>
+          <div><span class="text-gray-400">Uptime:</span> <span id="uptime-repost" class="text-gray-300">—</span></div>
+          <div><span class="text-gray-400">Restarts:</span> <span id="restarts-repost" class="text-gray-300">—</span></div>
+        </div>
+        <div class="mt-4 flex gap-2">
+          <button onclick="restartService('repost')" class="btn btn-red text-sm">Restart</button>
+          <button onclick="showLogs('repost')" class="btn btn-gray text-sm">View Logs</button>
+        </div>
+      </div>
+
+      <!-- Recap Pipeline -->
+      <div class="card p-5" id="card-recap">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div id="dot-recap" class="w-3 h-3 rounded-full bg-gray-500"></div>
+            <h2 class="text-lg font-semibold text-white">Recap Pipeline</h2>
+          </div>
+          <span id="badge-recap" class="badge badge-yellow">checking…</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <div><span class="text-gray-400">Status:</span> <span id="status-recap" class="text-gray-300">—</span></div>
+          <div><span class="text-gray-400">Health:</span> <span id="health-recap" class="text-gray-300">—</span></div>
+          <div><span class="text-gray-400">Uptime:</span> <span id="uptime-recap" class="text-gray-300">—</span></div>
+          <div><span class="text-gray-400">Restarts:</span> <span id="restarts-recap" class="text-gray-300">—</span></div>
+        </div>
+        <div class="mt-4 flex gap-2">
+          <button onclick="restartService('recap')" class="btn btn-red text-sm">Restart</button>
+          <button onclick="showLogs('recap')" class="btn btn-gray text-sm">View Logs</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-6 border-b border-gray-700">
+      <button id="tab-logs" class="pb-3 text-sm font-medium tab-active" onclick="switchTab('logs')">Logs</button>
+      <button id="tab-activity" class="pb-3 text-sm font-medium tab-inactive" onclick="switchTab('activity')">Activity</button>
+      <button id="tab-trigger" class="pb-3 text-sm font-medium tab-inactive" onclick="switchTab('trigger')">Manual Trigger</button>
+      <button id="tab-config" class="pb-3 text-sm font-medium tab-inactive" onclick="switchTab('config')">Configuration</button>
+    </div>
+
+    <!-- Tab: Logs -->
+    <div id="panel-logs">
+      <div class="flex gap-3 mb-3">
+        <button id="logbtn-repost" class="btn btn-blue text-sm" onclick="showLogs('repost')">Repost Bot</button>
+        <button id="logbtn-recap" class="btn btn-gray text-sm" onclick="showLogs('recap')">Recap Pipeline</button>
+        <button onclick="refreshLogs()" class="btn btn-gray text-sm">Refresh</button>
+      </div>
+      <div class="card p-4">
+        <div id="log-output" class="log-box p-4 text-green-400">Select a service to view logs…</div>
+      </div>
+    </div>
+
+    <!-- Tab: Activity -->
+    <div id="panel-activity" class="hidden">
+      <div class="card overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-800">
+            <tr>
+              <th class="text-left px-4 py-3 text-gray-400 font-medium">Time</th>
+              <th class="text-left px-4 py-3 text-gray-400 font-medium">Service</th>
+              <th class="text-left px-4 py-3 text-gray-400 font-medium">Event</th>
+            </tr>
+          </thead>
+          <tbody id="activity-body"></tbody>
+        </table>
+        <div id="activity-empty" class="px-4 py-8 text-center text-gray-500">No activity recorded yet.</div>
+      </div>
+    </div>
+
+    <!-- Tab: Manual Trigger -->
+    <div id="panel-trigger" class="hidden">
+      <div class="card p-6 max-w-lg">
+        <h3 class="text-lg font-semibold text-white mb-4">Trigger Recap Pipeline</h3>
+        <p class="text-sm text-gray-400 mb-4">Enter the path to a video file <strong>on the server</strong> to process it through the recap pipeline.</p>
+        <div class="space-y-3">
+          <input id="trigger-path" type="text" placeholder="/tmp/recap/video.mp4">
+          <input id="trigger-jobid" type="text" placeholder="Job ID (optional)">
+          <button onclick="triggerRecap()" class="btn btn-green">Start Processing</button>
+        </div>
+        <div id="trigger-result" class="mt-4 text-sm hidden"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Config -->
+    <div id="panel-config" class="hidden">
+      <div class="card p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-white">Environment Configuration</h3>
+          <div class="flex gap-2">
+            <button onclick="loadConfig()" class="btn btn-gray text-sm">Reload</button>
+            <button onclick="saveConfig()" class="btn btn-blue text-sm">Save Changes</button>
+          </div>
+        </div>
+        <p class="text-sm text-gray-400 mb-4">Secrets are masked and cannot be edited here. Restart containers after saving to apply changes.</p>
+        <div id="config-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        <div id="config-status" class="mt-4 text-sm hidden"></div>
+      </div>
+    </div>
+
+  </main>
+
+<script>
+// ── State ────────────────────────────────────────────────────────
+let currentLogService = 'repost';
+let configData = {};
+
+// ── Clock ────────────────────────────────────────────────────────
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── Tabs ─────────────────────────────────────────────────────────
+const tabs = ['logs', 'activity', 'trigger', 'config'];
+function switchTab(name) {
+  tabs.forEach(t => {
+    document.getElementById(`panel-${t}`).classList.toggle('hidden', t !== name);
+    document.getElementById(`tab-${t}`).className = `pb-3 text-sm font-medium ${t === name ? 'tab-active' : 'tab-inactive'}`;
+  });
+  if (name === 'activity') loadActivity();
+  if (name === 'config') loadConfig();
+}
+
+// ── Status ───────────────────────────────────────────────────────
+async function loadStatus() {
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    ['repost', 'recap'].forEach(svc => {
+      const s = d[svc];
+      const running = s.running && s.healthy;
+      const dot = document.getElementById(`dot-${svc}`);
+      const badge = document.getElementById(`badge-${svc}`);
+
+      dot.className = `w-3 h-3 rounded-full ${running ? 'bg-green-500 pulse-green' : 'bg-red-500 pulse-red'}`;
+      badge.className = `badge ${running ? 'badge-green' : 'badge-red'}`;
+      badge.textContent = running ? 'online' : (s.status === 'not_found' ? 'not found' : 'offline');
+
+      document.getElementById(`status-${svc}`).textContent = s.status || '—';
+      document.getElementById(`health-${svc}`).textContent = s.healthy ? 'OK' : 'unreachable';
+      document.getElementById(`restarts-${svc}`).textContent = s.restart_count ?? '—';
+
+      if (s.started_at && s.running) {
+        const diff = Date.now() - new Date(s.started_at).getTime();
+        const hrs = Math.floor(diff / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        document.getElementById(`uptime-${svc}`).textContent = `${hrs}h ${mins}m`;
+      } else {
+        document.getElementById(`uptime-${svc}`).textContent = '—';
+      }
+    });
+  } catch (e) {
+    console.error('Status fetch error:', e);
+  }
+}
+
+// ── Logs ─────────────────────────────────────────────────────────
+async function showLogs(service) {
+  currentLogService = service;
+  document.getElementById('logbtn-repost').className = `btn ${service === 'repost' ? 'btn-blue' : 'btn-gray'} text-sm`;
+  document.getElementById('logbtn-recap').className = `btn ${service === 'recap' ? 'btn-blue' : 'btn-gray'} text-sm`;
+  await refreshLogs();
+}
+
+async function refreshLogs() {
+  const el = document.getElementById('log-output');
+  el.textContent = 'Loading…';
+  try {
+    const r = await fetch(`/api/logs/${currentLogService}?lines=100`);
+    const d = await r.json();
+    el.textContent = d.logs || '(empty)';
+    el.scrollTop = el.scrollHeight;
+  } catch (e) {
+    el.textContent = `Error: ${e.message}`;
+  }
+}
+
+// ── Activity ─────────────────────────────────────────────────────
+async function loadActivity() {
+  try {
+    const r = await fetch('/api/activity');
+    const items = await r.json();
+    const body = document.getElementById('activity-body');
+    const empty = document.getElementById('activity-empty');
+    body.innerHTML = '';
+    if (items.length === 0) { empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    items.forEach(item => {
+      const tr = document.createElement('tr');
+      tr.className = 'border-t border-gray-700';
+      tr.innerHTML = `
+        <td class="px-4 py-3 text-gray-400">${item.time}</td>
+        <td class="px-4 py-3"><span class="badge ${item.service === 'recap' ? 'badge-green' : 'badge-yellow'}">${item.service}</span></td>
+        <td class="px-4 py-3 text-gray-300">${escHtml(item.message)}</td>`;
+      body.appendChild(tr);
+    });
+  } catch (e) { console.error(e); }
+}
+
+// ── Trigger ──────────────────────────────────────────────────────
+async function triggerRecap() {
+  const path = document.getElementById('trigger-path').value.trim();
+  const jobId = document.getElementById('trigger-jobid').value.trim();
+  const res = document.getElementById('trigger-result');
+  if (!path) { showMsg(res, 'Please enter a video path.', 'red'); return; }
+
+  const body = { video_path: path };
+  if (jobId) body.job_id = jobId;
+
+  try {
+    const r = await fetch('/api/recap/trigger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    if (r.ok) {
+      showMsg(res, `Pipeline started. Job ID: ${d.job_id}`, 'green');
+    } else {
+      showMsg(res, `Error: ${d.error}`, 'red');
+    }
+  } catch (e) {
+    showMsg(res, `Network error: ${e.message}`, 'red');
+  }
+}
+
+// ── Config ───────────────────────────────────────────────────────
+const SECRET_KEYS = new Set(['TELETHON_SESSION_STRING', 'TELEGRAM_BOT_TOKEN', 'TELEGRAM_API_HASH', 'TELEGRAM_API_ID']);
+
+async function loadConfig() {
+  try {
+    const r = await fetch('/api/config');
+    configData = await r.json();
+    const grid = document.getElementById('config-grid');
+    grid.innerHTML = '';
+    Object.entries(configData).forEach(([key, val]) => {
+      if (key.startsWith('#') || key === '') return; // skip comments
+      const isSecret = SECRET_KEYS.has(key);
+      const div = document.createElement('div');
+      div.innerHTML = `
+        <label class="block text-xs text-gray-400 mb-1 font-mono">${escHtml(key)}</label>
+        <input id="cfg-${key}" type="${isSecret ? 'password' : 'text'}" value="${escAttr(val)}"
+               ${isSecret ? 'disabled' : ''} class="${isSecret ? 'opacity-50 cursor-not-allowed' : ''}">`;
+      grid.appendChild(div);
+    });
+  } catch (e) { console.error(e); }
+}
+
+async function saveConfig() {
+  const updates = {};
+  Object.keys(configData).forEach(key => {
+    if (key.startsWith('#') || key === '' || SECRET_KEYS.has(key)) return;
+    const el = document.getElementById(`cfg-${key}`);
+    if (el && el.value !== configData[key]) {
+      updates[key] = el.value;
+    }
+  });
+
+  if (Object.keys(updates).length === 0) {
+    showMsg(document.getElementById('config-status'), 'No changes to save.', 'yellow');
+    return;
+  }
+
+  try {
+    const r = await fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    const d = await r.json();
+    if (r.ok) {
+      showMsg(document.getElementById('config-status'), `Saved. ${d.note}`, 'green');
+    } else {
+      showMsg(document.getElementById('config-status'), `Error: ${d.error}`, 'red');
+    }
+  } catch (e) {
+    showMsg(document.getElementById('config-status'), `Error: ${e.message}`, 'red');
+  }
+}
+
+// ── Restart ──────────────────────────────────────────────────────
+async function restartService(svc) {
+  if (!confirm(`Restart ${svc}?`)) return;
+  try {
+    const r = await fetch(`/api/restart/${svc}`, { method: 'POST' });
+    const d = await r.json();
+    if (r.ok) { alert(`${svc} restarted.`); loadStatus(); }
+    else { alert(`Error: ${d.error}`); }
+  } catch (e) { alert(`Error: ${e.message}`); }
+}
+
+// ── Helpers ──────────────────────────────────────────────────────
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function escAttr(s) { return String(s).replace(/"/g, '&quot;'); }
+function showMsg(el, msg, color) {
+  const colors = { green: 'text-green-400', red: 'text-red-400', yellow: 'text-yellow-400' };
+  el.className = `mt-4 text-sm ${colors[color] || ''}`;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 6000);
+}
+
+// ── Refresh all ──────────────────────────────────────────────────
+function refreshAll() { loadStatus(); refreshLogs(); }
+
+// ── Auto-refresh ─────────────────────────────────────────────────
+loadStatus();
+showLogs('repost');
+setInterval(loadStatus, 10000);   // every 10s
+setInterval(refreshLogs, 15000);  // every 15s
+</script>
+</body>
+</html>
