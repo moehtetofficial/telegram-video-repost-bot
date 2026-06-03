@@ -1,0 +1,27 @@
+FROM python:3.12-slim
+
+# FFmpeg is required for all audio/video processing steps
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install CPU-only PyTorch (≈200 MB vs ≈2 GB for CUDA version)
+RUN pip install --no-cache-dir \
+    torch --extra-index-url https://download.pytorch.org/whl/cpu
+
+# Then the rest of the dependencies
+COPY requirements-recap.txt .
+RUN pip install --no-cache-dir -r requirements-recap.txt
+
+COPY recap_pipeline.py .
+
+# Models (Whisper base ≈150 MB, BART ≈1.6 GB) are downloaded on first
+# video processed and cached in the /tmp/recap Docker volume.
+# Pre-downloading at build time was removed because Hostinger's build
+# environment OOMs when loading BART into memory during the image build.
+
+EXPOSE 7861
+
+CMD ["python", "recap_pipeline.py"]
