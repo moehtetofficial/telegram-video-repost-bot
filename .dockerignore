@@ -1,0 +1,11 @@
+.git
+.env
+.env.example
+*.session
+__pycache__
+*.pyc
+generate_session.py
+deploy.sh
+README.md
+bot.py
+multi_coin_trading_bot.zip
