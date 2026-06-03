@@ -1,0 +1,14 @@
+# Telegram
+telethon>=1.36.0
+cryptg>=0.4.0
+aiohttp>=3.9.0
+
+# Speech-to-text (CTranslate2 backend — lighter than openai-whisper)
+faster-whisper>=1.0.0
+
+# Summarisation
+transformers>=4.40.0
+sentencepiece>=0.2.0
+
+# Text-to-speech (Microsoft Edge TTS — free, no API key, high quality)
+edge-tts>=6.1.0
